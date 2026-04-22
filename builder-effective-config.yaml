@@ -1,0 +1,52 @@
+directories:
+  output: dist
+  buildResources: build-resources
+appId: com.captioncast.app
+productName: CaptionCast
+copyright: Free to use
+asar: true
+files:
+  - filter:
+      - src/**/*
+      - index.html
+      - overlay.html
+      - assets/**/*
+      - '!assets/icon.ico'
+      - '!assets/icon.icns'
+      - '!**/*.md'
+      - '!landing/**/*'
+      - node_modules/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CaptionCast
+  installerIcon: null
+  uninstallerIcon: null
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  category: public.app-category.utilities
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.plist
+dmg:
+  title: Install CaptionCast
+  window:
+    width: 540
+    height: 380
+electronVersion: 28.3.3
