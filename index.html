@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CaptionCast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica&family=Cinzel:wght@600&family=JetBrains+Mono:wght@400&family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.otf') format('opentype');
+}
+
+:root {
+  --bg:      #0b0b0f;
+  --surface: #13131a;
+  --border:  #222230;
+  --accent:  #00e5ff;
+  --accent2: #7c3aed;
+  --green:   #22c55e;
+  --red:     #ef4444;
+  --text:    #e8e8f0;
+  --muted:   #6b6b80;
+  --radius:  10px;
+  --mono:    'DM Mono', monospace;
+  --display: 'Syne', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--display); height: 100vh; overflow-y: auto; overflow-x: hidden; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.header {
+  padding: 20px 28px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, #0b0b0f 0%, #0f0f18 100%);
+}
+.logo-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.header-text h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+.header-text p  { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+.status-dot { margin-left: auto; display: flex; align-items: center; gap: 7px; font-size: 11px; font-family: var(--mono); color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+.dot.live  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+.dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 28px; background: var(--surface); }
+.tab {
+  padding: 11px 0; margin-right: 22px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s;
+  font-family: var(--mono); white-space: nowrap; flex-shrink: 0;
+}
+.tab.active { color: var(--accent); border-color: var(--accent); }
+.tab:hover:not(.active) { color: var(--text); }
+
+.content { padding: 20px 28px; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+.section-label {
+  font-size: 10px; font-family: var(--mono); letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+label { font-size: 12px; color: var(--muted); font-family: var(--mono); display: block; margin-bottom: 6px; }
+select, input[type="text"], input[type="password"] {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-family: var(--mono); font-size: 13px; padding: 10px 12px;
+  outline: none; transition: border-color 0.2s; appearance: none; -webkit-appearance: none;
+}
+select:focus, input:focus { border-color: var(--accent); }
+.select-wrap { position: relative; }
+.select-wrap::after { content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 12px; }
+.input-row { display: flex; gap: 8px; }
+.input-row input { flex: 1; }
+.eye-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0 12px; color: var(--muted); cursor: pointer; font-size: 14px; transition: color 0.2s; flex-shrink: 0; }
+.eye-btn:hover { color: var(--text); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 20px; border-radius: 7px; font-family: var(--display); font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s; letter-spacing: 0.3px; }
+.btn-primary { background: linear-gradient(135deg, var(--accent), #00b4d8); color: #000; width: 100%; margin-top: 14px; }
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-stop { background: var(--red); color: #fff; width: 100%; margin-top: 14px; }
+.btn-stop:hover { filter: brightness(1.15); }
+.btn-sm { background: var(--border); color: var(--text); font-size: 11px; padding: 7px 12px; border-radius: 5px; font-family: var(--mono); cursor: pointer; border: none; }
+.btn-sm:hover { background: #2a2a38; }
+.btn-link { background: none; border: none; color: var(--accent); font-family: var(--mono); font-size: 11px; cursor: pointer; text-decoration: underline; padding: 0; }
+.btn-link:hover { color: #fff; }
+
+.url-box { background: var(--bg); border: 1px solid var(--accent); border-radius: 7px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.url-text { font-family: var(--mono); font-size: 12px; color: var(--accent); flex: 1; word-break: break-all; }
+
+.info-box { background: var(--bg); border-left: 3px solid var(--accent2); border-radius: 0 6px 6px 0; padding: 12px 14px; margin-top: 10px; font-size: 12px; line-height: 1.7; color: var(--muted); font-family: var(--mono); }
+.info-box strong { color: var(--text); }
+
+.steps { list-style: none; counter-reset: step; }
+.steps li { counter-increment: step; display: flex; gap: 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
+.steps li::before { content: counter(step); background: var(--accent2); color: #fff; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: var(--mono); flex-shrink: 0; margin-top: 1px; }
+.steps li a { color: var(--accent); text-decoration: none; }
+.steps li a:hover { text-decoration: underline; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.5px; }
+.badge-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+.badge-cyan  { background: rgba(0,229,255,0.1);  color: var(--accent); border: 1px solid rgba(0,229,255,0.25); }
+
+.save-msg { font-size: 11px; font-family: var(--mono); color: var(--green); opacity: 0; transition: opacity 0.3s; margin-top: 8px; text-align: center; }
+.save-msg.show { opacity: 1; }
+
+.slider-row { display: flex; align-items: center; gap: 12px; }
+input[type="range"] { flex: 1; accent-color: var(--accent); height: 4px; cursor: pointer; }
+.slider-val { font-family: var(--mono); font-size: 12px; color: var(--accent); min-width: 42px; text-align: right; }
+
+.size-hint { display: flex; gap: 8px; margin-top: 10px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.size-hint span { background: var(--border); padding: 4px 9px; border-radius: 4px; }
+
+/* ── Style Tab ── */
+.font-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.font-card {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 8px;
+  padding: 14px 12px; cursor: pointer; transition: all 0.15s; position: relative;
+}
+.font-card:hover { border-color: #3a3a50; }
+.font-card.selected { border-color: var(--accent); background: rgba(0,229,255,0.04); }
+.font-card.selected::after { content: '✓'; position: absolute; top: 8px; right: 10px; color: var(--accent); font-size: 12px; font-family: var(--mono); }
+.font-card.span2 { grid-column: span 2; }
+.font-preview { font-size: 20px; color: var(--text); line-height: 1.2; margin-bottom: 5px; }
+.font-name { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.font-tag { display: inline-block; background: rgba(124,58,237,0.2); color: #a78bfa; border-radius: 3px; padding: 1px 5px; font-family: var(--mono); font-size: 9px; margin-left: 4px; vertical-align: middle; }
+
+.colour-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.colour-option { border: 2px solid var(--border); border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.colour-option:hover { border-color: #3a3a50; }
+.colour-option.selected { border-color: var(--accent); }
+.colour-preview { width: 100%; height: 38px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; }
+.colour-preview.wob { background: #000; color: #fff; }
+.colour-preview.bow { background: #fff; color: #000; }
+.colour-label { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; }
+
+.preview-box { background: #222; border-radius: 7px; padding: 24px 20px; min-height: 90px; display: flex; align-items: center; justify-content: center; margin-top: 4px; position: relative; }
+.preview-box::before { content: 'LIVE PREVIEW'; position: absolute; top: 8px; left: 10px; font-family: var(--mono); font-size: 9px; letter-spacing: 1px; color: #444; }
+#previewText { text-align: center; line-height: 1.4; max-width: 90%; transition: all 0.2s; }
+
+.footer { padding: 14px 28px; border-top: 1px solid var(--border); font-size: 10px; color: var(--muted); font-family: var(--mono); display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-mark">🎙</div>
+  <div class="header-text">
+    <h1>CaptionCast</h1>
+    <p>free closed captions for streamers</p>
+  </div>
+  <div class="status-dot">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">Idle</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="stream">Stream</div>
+  <div class="tab" data-tab="style">Style</div>
+  <div class="tab" data-tab="overlay">Overlay</div>
+  <div class="tab" data-tab="tiktok">TikTok</div>
+  <div class="tab" data-tab="setup">Setup</div>
+</div>
+
+<div class="content">
+
+<!-- ════════════ STREAM TAB ════════════ -->
+<div class="panel active" id="tab-stream">
+
+  <div class="section">
+    <div class="section-label">Microphone</div>
+    <label for="micSelect">Select input device</label>
+    <div class="select-wrap">
+      <select id="micSelect"><option value="">Loading devices…</option></select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Deepgram API Key</div>
+    <label for="apiKey">Paste your key below</label>
+    <div class="input-row">
+      <input type="password" id="apiKey" placeholder="e.g. a1b2c3d4e5f6…" autocomplete="off" />
+      <button class="eye-btn" id="toggleKey">👁</button>
+    </div>
+    <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn-link" id="signupLink">Don't have a key? Get one free →</button>
+      <button class="btn btn-sm" id="saveBtn">Save</button>
+    </div>
+    <div class="save-msg" id="saveMsg">✓ Saved</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Auto-Clear Delay</div>
+    <label>Clear captions after silence</label>
+    <div class="slider-row">
+      <input type="range" id="clearDelay" min="1" max="10" step="0.5" value="3" />
+      <span class="slider-val" id="delayVal">3s</span>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="startBtn">▶ Start Captions</button>
+  <button class="btn btn-stop" id="stopBtn" style="display:none;">■ Stop Captions</button>
+
+</div>
+
+<!-- ════════════ STYLE TAB ════════════ -->
+<div class="panel" id="tab-style">
+
+  <div class="section">
+    <div class="section-label">Caption Font</div>
+    <div class="font-grid" id="fontGrid">
+      <div class="font-card selected" data-font="'IM Fell DW Pica', serif">
+        <div class="font-preview" style="font-family:'IM Fell DW Pica',serif">Caption text</div>
+        <div class="font-name">IM Fell DW Pica <span class="font-tag">Serif</span></div>
+      </div>
+      <div class="font-card" data-font="'Cinzel', serif">
+        <div class="font-preview" style="font-family:'Cinzel',serif">Caption text</div>
+        <div class="font-name">Cinzel <span class="font-tag">Display</span></div>
+      </div>
+      <div class="font-card" data-font="'JetBrains Mono', monospace">
+        <div class="font-preview" style="font-family:'JetBrains Mono',monospace">Caption text</div>
+        <div class="font-name">JetBrains Mono <span class="font-tag">Mono</span></div>
+      </div>
+      <div class="font-card" data-font="'Roboto', sans-serif">
+        <div class="font-preview" style="font-family:'Roboto',sans-serif">Caption text</div>
+        <div class="font-name">Roboto <span class="font-tag">Sans</span></div>
+      </div>
+      <div class="font-card span2" data-font="'OpenDyslexic', sans-serif">
+        <div class="font-preview" style="font-family:'OpenDyslexic',sans-serif">Caption text</div>
+        <div class="font-name">OpenDyslexic <span class="font-tag">Accessibility</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Font Size</div>
+    <div class="slider-row">
+      <input type="range" id="fontSize" min="16" max="72" step="2" value="28" />
+      <span class="slider-val" id="fontSizeVal">28px</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Colour Mode</div>
+    <div class="colour-toggle">
+      <div class="colour-option selected" data-mode="wob">
+        <div class="colour-preview wob">Caption text</div>
+        <div class="colour-label">White text<br>Black outline</div>
+      </div>
+      <div class="colour-option" data-mode="bow">
+        <div class="colour-preview bow">Caption text</div>
+        <div class="colour-label">Black text<br>White outline</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Outline Thickness</div>
+    <div class="slider-row">
+      <input type="range" id="outlineSize" min="0" max="8" step="1" value="2" />
+      <span class="slider-val" id="outlineSizeVal">2px</span>
+    </div>
+    <div style="margin-top:6px; font-size:11px; color:var(--muted); font-family:var(--mono);">
+      0 = none &nbsp;·&nbsp; 2 = subtle &nbsp;·&nbsp; 5 = bold &nbsp;·&nbsp; 8 = heavy
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Live Preview</div>
+    <div class="preview-box">
+      <div id="previewText">Hello, this is how your captions will look on stream!</div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="saveStyleBtn">💾 Save Style</button>
+  <div class="save-msg" id="styleSaveMsg">✓ Style saved — overlay updates automatically</div>
+
+</div>
+
+<!-- ════════════ OVERLAY TAB ════════════ -->
+<div class="panel" id="tab-overlay">
+
+  <div class="section">
+    <div class="section-label">Overlay URL</div>
+    <p style="font-size:12px; color:var(--muted); font-family:var(--mono); margin-bottom:12px; line-height:1.6;">
+      Add this URL as a <strong style="color:var(--text)">Browser Source</strong> in OBS or Streamlabs:
+    </p>
+    <div class="url-box">
+      <span class="url-text" id="overlayUrl">loading…</span>
+      <button class="btn btn-sm" id="copyUrl">Copy</button>
+    </div>
+    <div class="size-hint">Recommended: <span>1920 × 200px</span> — position at bottom of scene</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">OBS Setup Steps</div>
+    <ol class="steps">
+      <li>Open OBS and go to your scene</li>
+      <li>Click <strong>+</strong> in Sources → select <strong>Browser</strong></li>
+      <li>Give it a name (e.g. <em>Live Captions</em>) and click OK</li>
+      <li>Paste the URL above into the <strong>URL</strong> field</li>
+      <li>Set Width to <strong>1920</strong> and Height to <strong>200</strong></li>
+      <li>Click OK — drag the source to the bottom of your scene</li>
+      <li>Press <strong>Start Captions</strong> in CaptionCast and you're live!</li>
+    </ol>
+    <div class="info-box">
+      💡 <strong>Tip:</strong> Style changes apply instantly — no browser source refresh needed. The overlay auto-reconnects if you restart CaptionCast.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Streamlabs / Other Software</div>
+    <ol class="steps">
+      <li>Find <strong>Browser Source</strong> or <strong>Web Source</strong> in your software</li>
+      <li>Paste the URL above into the URL field</li>
+      <li>Set dimensions to 1920 × 200 and position at the bottom</li>
+      <li>Start CaptionCast — captions appear automatically</li>
+    </ol>
+  </div>
+
+</div>
+
+<!-- ════════════ TIKTOK TAB ════════════ -->
+<div class="panel" id="tab-tiktok">
+
+  <div class="section">
+    <div class="section-label">TikTok Studio Setup</div>
+    <p style="font-size:12px; color:var(--muted); font-family:var(--mono); margin-bottom:14px; line-height:1.7;">
+      TikTok Studio doesn't support browser sources, so CaptionCast spawns a
+      <strong style="color:var(--text)">floating caption window</strong> that sits on top of everything on your screen.
+      You capture it in TikTok Studio as a <strong style="color:var(--text)">Window Capture</strong> source.
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Floating Window</div>
+    <div style="display:flex; gap:10px; margin-bottom:14px;">
+      <button class="btn btn-primary" id="openFloatBtn" style="margin-top:0; flex:1;">▶ Launch Floating Window</button>
+      <button class="btn btn-stop"   id="closeFloatBtn" style="margin-top:0; flex:1; display:none;">■ Close Window</button>
+    </div>
+    <div id="floatStatus" style="font-size:11px; font-family:var(--mono); color:var(--muted); text-align:center; min-height:16px;"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Window Size</div>
+    <label>Width (px)</label>
+    <div class="slider-row" style="margin-bottom:14px;">
+      <input type="range" id="floatWidth" min="400" max="3840" step="40" value="1920" />
+      <span class="slider-val" id="floatWidthVal">1920px</span>
+    </div>
+    <label>Height (px)</label>
+    <div class="slider-row">
+      <input type="range" id="floatHeight" min="80" max="400" step="10" value="200" />
+      <span class="slider-val" id="floatHeightVal">200px</span>
+    </div>
+    <div class="info-box" style="margin-top:12px;">
+      💡 <strong>Tip:</strong> Set the width to match your stream canvas (usually 1920). Height of 160–220px works well for most font sizes. Changes apply when you relaunch the window.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">TikTok Studio Steps</div>
+    <ol class="steps">
+      <li>Click <strong>Launch Floating Window</strong> above — a transparent caption window will appear at the bottom of your screen</li>
+      <li>Open <strong>TikTok Studio</strong> and go to your scene</li>
+      <li>Click <strong>+</strong> to add a source → select <strong>Window Capture</strong></li>
+      <li>Choose <strong>CaptionCast Overlay</strong> from the window list</li>
+      <li>Resize and position the source at the bottom of your scene</li>
+      <li>Press <strong>Start Captions</strong> in the Stream tab — done!</li>
+    </ol>
+    <div class="info-box">
+      🪟 <strong>The floating window is draggable</strong> — click and drag it anywhere on screen. It always stays on top so it won't get hidden behind TikTok Studio. Your caption style settings from the Style tab apply here too.
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════ SETUP TAB ════════════ -->
+<div class="panel" id="tab-setup">
+
+  <div class="section">
+    <div class="section-label">What is Deepgram?</div>
+    <p style="font-size:13px; line-height:1.7; color:var(--muted);">
+      Deepgram is the speech-to-text engine powering CaptionCast. It's <strong style="color:var(--text)">free to start</strong> — 
+      $200 of credits included, which is <strong style="color:var(--green)">hundreds of hours</strong> of live captioning at no cost.
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Getting Your Free API Key</div>
+    <ol class="steps">
+      <li>Go to <a href="#" class="deepgram-link" data-url="https://console.deepgram.com/signup">console.deepgram.com/signup</a> — create a free account (no card needed)</li>
+      <li>Verify your email address</li>
+      <li>Log in → go to <strong>API Keys</strong> in the left sidebar</li>
+      <li>Click <strong>Create a New API Key</strong></li>
+      <li>Give it any name (e.g. CaptionCast) → click <strong>Create Key</strong></li>
+      <li><strong>Copy the key immediately</strong> — it's only shown once! Paste it in the Stream tab.</li>
+    </ol>
+    <div class="info-box">
+      🔐 <strong>Your key stays on your computer.</strong> It's stored locally and only ever sent directly to Deepgram — never shared.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">How It Works</div>
+    <ol class="steps">
+      <li>CaptionCast captures audio from your selected microphone</li>
+      <li>Audio streams in real-time to Deepgram Nova-2 for transcription</li>
+      <li>Text is relayed to your OBS overlay via a local connection</li>
+      <li>Captions auto-clear after the silence delay you set</li>
+      <li>Adjust font, size, colour and outline in the Style tab anytime</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <div class="section-label">About</div>
+    <p style="font-size:12px; color:var(--muted); font-family:var(--mono); line-height:1.7;">
+      CaptionCast v1.0 · Free &amp; open source<br>
+      Built for streamers, by streamers<br>
+      <span class="badge badge-green">Windows</span>&nbsp;<span class="badge badge-cyan">macOS</span>
+    </p>
+  </div>
+
+</div>
+
+</div><!-- /content -->
+
+<div class="footer">
+  <span>CaptionCast</span>
+  <span style="color:var(--border)">·</span>
+  <span>Deepgram Nova-2</span>
+  <span style="margin-left:auto;" id="footerStatus">—</span>
+</div>
+
+<script>
+let config = { apiKey: '', micDeviceId: '', clearDelay: 3000, style: null };
+let style  = { font: "'IM Fell DW Pica', serif", fontSize: 28, colourMode: 'wob', outlineSize: 2 };
+let isRunning = false;
+let deepgramSocket = null;
+let mediaStream = null;
+let clearTimer = null;
+
+async function init() {
+  config = await window.captionCast.loadConfig();
+  const url = await window.captionCast.getOverlayUrl();
+  document.getElementById('overlayUrl').textContent = url;
+
+  if (config.apiKey)     document.getElementById('apiKey').value = config.apiKey;
+  if (config.clearDelay) {
+    const s = config.clearDelay / 1000;
+    document.getElementById('clearDelay').value = s;
+    document.getElementById('delayVal').textContent = s + 's';
+  }
+  if (config.style) { style = { ...style, ...config.style }; applyStyleUI(); }
+
+  await populateMics();
+  if (config.micDeviceId) document.getElementById('micSelect').value = config.micDeviceId;
+  updatePreview();
+}
+
+async function populateMics() {
+  try {
+    const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+    tmp.getTracks().forEach(t => t.stop());
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const mics = devices.filter(d => d.kind === 'audioinput');
+    document.getElementById('micSelect').innerHTML = mics.map((d, i) =>
+      `<option value="${d.deviceId}">${d.label || 'Microphone ' + (i + 1)}</option>`).join('');
+  } catch {
+    document.getElementById('micSelect').innerHTML = '<option>Mic permission denied</option>';
+  }
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab, .panel').forEach(el => el.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Save stream settings
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  config.apiKey      = document.getElementById('apiKey').value.trim();
+  config.micDeviceId = document.getElementById('micSelect').value;
+  config.clearDelay  = parseFloat(document.getElementById('clearDelay').value) * 1000;
+  config.style       = style;
+  await window.captionCast.saveConfig(config);
+  showMsg('saveMsg');
+});
+
+document.getElementById('toggleKey').addEventListener('click', () => {
+  const inp = document.getElementById('apiKey');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+});
+document.getElementById('clearDelay').addEventListener('input', e => {
+  document.getElementById('delayVal').textContent = e.target.value + 's';
+});
+
+// Font cards
+document.querySelectorAll('.font-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.font-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    style.font = card.dataset.font;
+    updatePreview();
+  });
+});
+
+// Colour mode
+document.querySelectorAll('.colour-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.colour-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    style.colourMode = opt.dataset.mode;
+    updatePreview();
+  });
+});
+
+// Sliders
+document.getElementById('fontSize').addEventListener('input', e => {
+  style.fontSize = parseInt(e.target.value);
+  document.getElementById('fontSizeVal').textContent = style.fontSize + 'px';
+  updatePreview();
+});
+document.getElementById('outlineSize').addEventListener('input', e => {
+  style.outlineSize = parseInt(e.target.value);
+  document.getElementById('outlineSizeVal').textContent = style.outlineSize + 'px';
+  updatePreview();
+});
+
+// Save style
+document.getElementById('saveStyleBtn').addEventListener('click', async () => {
+  config.style = style;
+  await window.captionCast.saveConfig(config);
+  await window.captionCast.broadcastStyle(style);
+  showMsg('styleSaveMsg');
+});
+
+function buildOutline(px, colour) {
+  if (!px) return 'none';
+  const s = [];
+  for (let x = -px; x <= px; x++)
+    for (let y = -px; y <= px; y++)
+      if (x || y) s.push(`${x}px ${y}px 0 ${colour}`);
+  return s.join(',');
+}
+
+function updatePreview() {
+  const el = document.getElementById('previewText');
+  const tc = style.colourMode === 'wob' ? '#fff' : '#000';
+  const oc = style.colourMode === 'wob' ? '#000' : '#fff';
+  const bg = style.colourMode === 'wob' ? 'rgba(0,0,0,0.78)' : 'rgba(255,255,255,0.88)';
+  el.style.fontFamily  = style.font;
+  el.style.fontSize    = style.fontSize + 'px';
+  el.style.color       = tc;
+  el.style.textShadow  = buildOutline(style.outlineSize, oc);
+  el.style.background  = bg;
+  el.style.padding     = '8px 16px';
+  el.style.borderRadius = '5px';
+}
+
+function applyStyleUI() {
+  document.querySelectorAll('.font-card').forEach(c => c.classList.toggle('selected', c.dataset.font === style.font));
+  document.querySelectorAll('.colour-option').forEach(o => o.classList.toggle('selected', o.dataset.mode === style.colourMode));
+  document.getElementById('fontSize').value         = style.fontSize;
+  document.getElementById('fontSizeVal').textContent = style.fontSize + 'px';
+  document.getElementById('outlineSize').value      = style.outlineSize;
+  document.getElementById('outlineSizeVal').textContent = style.outlineSize + 'px';
+}
+
+// Copy URL
+document.getElementById('copyUrl').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('overlayUrl').textContent);
+  const btn = document.getElementById('copyUrl');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+});
+
+// Links
+document.getElementById('signupLink').addEventListener('click', () => window.captionCast.openUrl('https://console.deepgram.com/signup'));
+document.querySelectorAll('.deepgram-link').forEach(el => el.addEventListener('click', e => { e.preventDefault(); window.captionCast.openUrl(el.dataset.url); }));
+
+// Status
+function setStatus(state, text) {
+  document.getElementById('statusDot').className = 'dot' + (state ? ' ' + state : '');
+  document.getElementById('statusText').textContent = text;
+  document.getElementById('footerStatus').textContent = text;
+}
+function showMsg(id) {
+  const el = document.getElementById(id);
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// Start / Stop
+document.getElementById('startBtn').addEventListener('click', startCaptions);
+document.getElementById('stopBtn').addEventListener('click', stopCaptions);
+
+async function startCaptions() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const micId  = document.getElementById('micSelect').value;
+  const delay  = parseFloat(document.getElementById('clearDelay').value) * 1000;
+
+  if (!apiKey) { alert('Please enter your Deepgram API key first.'); return; }
+
+  config = { apiKey, micDeviceId: micId, clearDelay: delay, style };
+  await window.captionCast.saveConfig(config);
+
+  try {
+    setStatus('', 'Connecting…');
+    document.getElementById('startBtn').disabled = true;
+
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: micId ? { deviceId: { exact: micId } } : true
+    });
+
+    deepgramSocket = new WebSocket(
+      `wss://api.deepgram.com/v1/listen?model=nova-2&language=en&smart_format=true&interim_results=true&encoding=linear16&sample_rate=16000&channels=1`,
+      ['token', apiKey]
+    );
+
+    deepgramSocket.onopen = () => {
+      setStatus('live', 'Live');
+      isRunning = true;
+      document.getElementById('startBtn').style.display = 'none';
+      document.getElementById('stopBtn').style.display = 'flex';
+      window.captionCast.broadcastStyle(style);
+
+      const ctx = new AudioContext({ sampleRate: 16000 });
+      const src = ctx.createMediaStreamSource(mediaStream);
+      const proc = ctx.createScriptProcessor(4096, 1, 1);
+      proc.onaudioprocess = e => {
+        if (deepgramSocket?.readyState !== 1) return;
+        const f32 = e.inputBuffer.getChannelData(0);
+        const i16 = new Int16Array(f32.length);
+        for (let i = 0; i < f32.length; i++) i16[i] = Math.max(-32768, Math.min(32767, f32[i] * 32768));
+        deepgramSocket.send(i16.buffer);
+      };
+      src.connect(proc); proc.connect(ctx.destination);
+      window._audioCtx = ctx;
+    };
+
+    deepgramSocket.onmessage = evt => {
+      try {
+        const data = JSON.parse(evt.data);
+        const alt  = data?.channel?.alternatives?.[0];
+        if (!alt?.transcript) return;
+        window.captionCast.broadcastCaption(alt.transcript, data.is_final);
+        if (data.is_final) {
+          clearTimeout(clearTimer);
+          clearTimer = setTimeout(() => window.captionCast.broadcastCaption('', true), delay);
+        }
+      } catch (_) {}
+    };
+
+    deepgramSocket.onerror = () => setStatus('error', 'Connection error');
+    deepgramSocket.onclose = () => { if (isRunning) stopCaptions(); };
+
+  } catch (err) {
+    setStatus('error', err.message);
+    document.getElementById('startBtn').disabled = false;
+  }
+}
+
+function stopCaptions() {
+  isRunning = false;
+  clearTimeout(clearTimer);
+  window.captionCast.broadcastCaption('', true);
+  if (deepgramSocket) { deepgramSocket.close(); deepgramSocket = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  if (window._audioCtx) { window._audioCtx.close(); window._audioCtx = null; }
+  setStatus('', 'Idle');
+  document.getElementById('startBtn').style.display = 'flex';
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').style.display = 'none';
+}
+
+
+// ── TikTok Floating Window ────────────────────────────────────────────────────
+let floatOpen = false;
+
+async function initFloatState() {
+  const state = await window.captionCast.getFloatingState();
+  setFloatUI(state.open);
+}
+
+function setFloatUI(open) {
+  floatOpen = open;
+  document.getElementById('openFloatBtn').style.display  = open ? 'none'  : 'flex';
+  document.getElementById('closeFloatBtn').style.display = open ? 'flex'  : 'none';
+  document.getElementById('floatStatus').textContent     = open
+    ? '✓ Floating window is live — add it as Window Capture in TikTok Studio'
+    : '';
+}
+
+document.getElementById('openFloatBtn').addEventListener('click', async () => {
+  const w = parseInt(document.getElementById('floatWidth').value);
+  const h = parseInt(document.getElementById('floatHeight').value);
+  const result = await window.captionCast.openFloating({ width: w, height: h });
+  if (result.ok) {
+    setFloatUI(true);
+    // Push current style to the new window
+    await window.captionCast.broadcastStyle(style);
+  }
+});
+
+document.getElementById('closeFloatBtn').addEventListener('click', async () => {
+  await window.captionCast.closeFloating();
+  setFloatUI(false);
+});
+
+// Listen for window being closed via its own X button
+window.captionCast.onFloatingClosed(() => setFloatUI(false));
+
+// Size sliders — update label only; apply on next launch
+document.getElementById('floatWidth').addEventListener('input', e => {
+  document.getElementById('floatWidthVal').textContent = e.target.value + 'px';
+  if (floatOpen) window.captionCast.resizeFloating({ width: parseInt(e.target.value) });
+});
+document.getElementById('floatHeight').addEventListener('input', e => {
+  document.getElementById('floatHeightVal').textContent = e.target.value + 'px';
+  if (floatOpen) window.captionCast.resizeFloating({ height: parseInt(e.target.value) });
+});
+
+init();
+initFloatState();
+</script>
+</body>
+</html>
